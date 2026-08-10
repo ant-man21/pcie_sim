@@ -55,7 +55,7 @@ def enumerate_pcie(curr_bus, next_bus, sim, device_list):
 					offset = cs.BAR0 + 4*i
 					sim.write_config(curr_bus, device, 0, offset, 4, 0xFFFFFFFF)   # step 1: write all-1s
 					raw = sim.read_config(curr_bus, device, 0, offset, 4)          # step 2: read back
-					print(f"bus{curr_bus}:dev{device}: bar{i} raw: {hex(raw)}") #more debug
+					# print(f"bus{curr_bus}:dev{device}: bar{i} raw: {hex(raw)}") #more debug
 					if raw == 0:
 						break # no more BARs
 					flags = raw & 0xF #grab first byte and read the flags for kind
