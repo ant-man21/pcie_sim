@@ -1,0 +1,141 @@
+[
+  {
+    "bus": 0,
+    "device": 0,
+    "function": 0,
+    "vendor_id": 32902,
+    "device_id": 13614,
+    "base_class": 6,
+    "sub_class": 4,
+    "bars": []
+  },
+  {
+    "bus": 0,
+    "device": 1,
+    "function": 0,
+    "vendor_id": 32902,
+    "device_id": 13615,
+    "base_class": 6,
+    "sub_class": 4,
+    "bars": []
+  },
+  {
+    "bus": 0,
+    "device": 2,
+    "function": 0,
+    "vendor_id": 32902,
+    "device_id": 13616,
+    "base_class": 6,
+    "sub_class": 4,
+    "bars": []
+  },
+  {
+    "bus": 1,
+    "device": 0,
+    "function": 0,
+    "vendor_id": 4277,
+    "device_id": 34597,
+    "base_class": 6,
+    "sub_class": 4,
+    "bars": []
+  },
+  {
+    "bus": 2,
+    "device": 0,
+    "function": 0,
+    "vendor_id": 4277,
+    "device_id": 34631,
+    "base_class": 6,
+    "sub_class": 4,
+    "bars": []
+  },
+  {
+    "bus": 2,
+    "device": 1,
+    "function": 0,
+    "vendor_id": 4277,
+    "device_id": 34631,
+    "base_class": 6,
+    "sub_class": 4,
+    "bars": []
+  },
+  {
+    "bus": 3,
+    "device": 0,
+    "function": 0,
+    "vendor_id": 5197,
+    "device_id": 43016,
+    "base_class": 1,
+    "sub_class": 8,
+    "bars": [
+      {
+        "index": 0,
+        "size": 16384,
+        "kind": "mem64",
+        "prefetchable": false,
+        "address": 0
+      }
+    ]
+  },
+  {
+    "bus": 4,
+    "device": 0,
+    "function": 0,
+    "vendor_id": 5348,
+    "device_id": 5719,
+    "base_class": 2,
+    "sub_class": 0,
+    "bars": [
+      {
+        "index": 0,
+        "size": 262144,
+        "kind": "mem64",
+        "prefetchable": false,
+        "address": 0
+      }
+    ]
+  },
+  {
+    "bus": 5,
+    "device": 0,
+    "function": 0,
+    "vendor_id": 32902,
+    "device_id": 5427,
+    "base_class": 2,
+    "sub_class": 0,
+    "bars": [
+      {
+        "index": 0,
+        "size": 131072,
+        "kind": "mem64",
+        "prefetchable": false,
+        "address": 0
+      }
+    ]
+  },
+  {
+    "bus": 6,
+    "device": 0,
+    "function": 0,
+    "vendor_id": 4318,
+    "device_id": 8708,
+    "base_class": 3,
+    "sub_class": 0,
+    "bars": [
+      {
+        "index": 0,
+        "size": 268435456,
+        "kind": "mem64",
+        "prefetchable": true,
+        "address": 0
+      },
+      {
+        "index": 1,
+        "size": 33554432,
+        "kind": "mem64",
+        "prefetchable": false,
+        "address": 0
+      }
+    ]
+  }
+]

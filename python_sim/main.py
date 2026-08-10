@@ -85,6 +85,13 @@ def main():
 	device_list = []
 	sim = cs.ConfigSpace("topology.yaml")
 	enumerate_pcie(curr_bus, next_bus, sim, device_list)
+	# Convert dataclasses -> dictionaries -> JSON
+	with open("devices_unsorted.json", "w") as f:
+		json.dump(
+			[asdict(device) for device in device_list],
+			f,
+			indent=2
+		)
 	device_list.sort(key=lambda d: (d.bus, d.device, d.function)) #in firmware do we just own the disorganized. can it be created sorted. no probably not.
 	for device in device_list:
 		print(
