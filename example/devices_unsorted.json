@@ -15,7 +15,9 @@
         "prefetchable": false,
         "address": 0
       }
-    ]
+    ],
+    "secondary_bus": null,
+    "subordinate_bus": null
   },
   {
     "bus": 2,
@@ -25,7 +27,9 @@
     "device_id": 34631,
     "base_class": 6,
     "sub_class": 4,
-    "bars": []
+    "bars": [],
+    "secondary_bus": 3,
+    "subordinate_bus": 3
   },
   {
     "bus": 4,
@@ -43,7 +47,9 @@
         "prefetchable": false,
         "address": 0
       }
-    ]
+    ],
+    "secondary_bus": null,
+    "subordinate_bus": null
   },
   {
     "bus": 2,
@@ -53,7 +59,9 @@
     "device_id": 34631,
     "base_class": 6,
     "sub_class": 4,
-    "bars": []
+    "bars": [],
+    "secondary_bus": 4,
+    "subordinate_bus": 4
   },
   {
     "bus": 1,
@@ -63,7 +71,9 @@
     "device_id": 34597,
     "base_class": 6,
     "sub_class": 4,
-    "bars": []
+    "bars": [],
+    "secondary_bus": 2,
+    "subordinate_bus": 4
   },
   {
     "bus": 0,
@@ -73,7 +83,9 @@
     "device_id": 13614,
     "base_class": 6,
     "sub_class": 4,
-    "bars": []
+    "bars": [],
+    "secondary_bus": 1,
+    "subordinate_bus": 4
   },
   {
     "bus": 5,
@@ -91,7 +103,9 @@
         "prefetchable": false,
         "address": 0
       }
-    ]
+    ],
+    "secondary_bus": null,
+    "subordinate_bus": null
   },
   {
     "bus": 0,
@@ -101,7 +115,9 @@
     "device_id": 13615,
     "base_class": 6,
     "sub_class": 4,
-    "bars": []
+    "bars": [],
+    "secondary_bus": 5,
+    "subordinate_bus": 5
   },
   {
     "bus": 6,
@@ -126,7 +142,9 @@
         "prefetchable": false,
         "address": 0
       }
-    ]
+    ],
+    "secondary_bus": null,
+    "subordinate_bus": null
   },
   {
     "bus": 0,
@@ -136,6 +154,8 @@
     "device_id": 13616,
     "base_class": 6,
     "sub_class": 4,
-    "bars": []
+    "bars": [],
+    "secondary_bus": 6,
+    "subordinate_bus": 6
   }
 ]

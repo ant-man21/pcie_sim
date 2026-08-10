@@ -21,6 +21,8 @@ class DiscoveredDevice:
     base_class: int
     sub_class: int
     bars: list = field(default_factory=list)
+    secondary_bus: int = None
+    subordinate_bus: int = None
 
 def enumerate_pcie(curr_bus, next_bus, sim, device_list):
 	
@@ -30,6 +32,8 @@ def enumerate_pcie(curr_bus, next_bus, sim, device_list):
 			return # too many buses.
 		vendor_id = sim.read_config(curr_bus, device, 0, cs.VENDOR_ID, 2)
 		bars = []
+		secondary_bus = None
+		subordinate_bus = None
 		if vendor_id == 0xffff:
 			continue
 		else:
@@ -43,13 +47,15 @@ def enumerate_pcie(curr_bus, next_bus, sim, device_list):
 				next_bus = assigned_bus + 1
 				next_bus = enumerate_pcie(assigned_bus, next_bus, sim, device_list)
 				sim.write_config(curr_bus, device, 0, cs.SUBORDINATE_BUS, 1, next_bus-1)
+				secondary_bus = assigned_bus
+				subordinate_bus = next_bus - 1
 			else: #header_type == 0x00 probably?
 				#read bars here?
 				for i in range(0,6):
 					offset = cs.BAR0 + 4*i
 					sim.write_config(curr_bus, device, 0, offset, 4, 0xFFFFFFFF)   # step 1: write all-1s
 					raw = sim.read_config(curr_bus, device, 0, offset, 4)          # step 2: read back
-					# print(f"bus{curr_bus}:dev{device}: bar{i} raw: {hex(raw)}") #more debug
+					print(f"bus{curr_bus}:dev{device}: bar{i} raw: {hex(raw)}") #more debug
 					if raw == 0:
 						break # no more BARs
 					flags = raw & 0xF #grab first byte and read the flags for kind
@@ -73,6 +79,8 @@ def enumerate_pcie(curr_bus, next_bus, sim, device_list):
 					base_class=sim.read_config(curr_bus, device, 0, cs.BASE_CLASS, 2),
 					sub_class=sim.read_config(curr_bus, device, 0, cs.SUBCLASS, 2),
 					bars=bars,
+					secondary_bus=secondary_bus,
+					subordinate_bus=subordinate_bus,
 				)
 			)
 			# print(f"bus{curr_bus}:dev{device}: venid: {hex(vendor_id)} class: {hex(base_class)}:{hex(sub_class)}")
