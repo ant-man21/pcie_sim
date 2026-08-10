@@ -37,7 +37,7 @@
 
   .topbar{ display:flex; flex-wrap:wrap; justify-content:space-between; align-items:flex-start; gap:16px; }
   .title-block h1{ font-family:var(--mono); font-size:1.25rem; letter-spacing:0.07em; margin:0 0 6px; text-wrap:balance; color:var(--ink); }
-  .subtitle{ margin:0; max-width:58ch; color:var(--ink-muted); font-size:0.92rem; line-height:1.55; }
+  .subtitle{ margin:0; max-width:60ch; color:var(--ink-muted); font-size:0.92rem; line-height:1.55; }
   .subtitle code{ font-family:var(--mono); background:var(--bg-elevated); padding:1px 5px; border-radius:3px; border:1px solid var(--border); font-size:0.85em; }
 
   .transport{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
@@ -47,6 +47,7 @@
   .xport-btn:hover{ border-color:var(--accent); color:var(--accent); }
   .xport-btn:focus-visible{ outline:2px solid var(--accent-glow); outline-offset:2px; }
   .xport-btn:active{ transform:translateY(1px); }
+  .xport-btn:disabled{ opacity:0.4; cursor:not-allowed; }
   .xport-primary{ background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:600; }
   .xport-primary:hover{ color:var(--accent-ink); border-color:var(--accent-glow); background:var(--accent-glow); }
   .led{ width:7px; height:7px; border-radius:50%; background:rgba(0,0,0,0.25); display:inline-block; }
@@ -73,7 +74,7 @@
   .panel-head span{ color:var(--accent); }
 
   .tree-scroll{ overflow-x:auto; padding:14px; }
-  #tree-svg{ display:block; width:800px; height:auto; min-width:800px; }
+  #tree-svg{ display:block; height:auto; }
 
   .instrument-col{ display:flex; flex-direction:column; gap:16px; }
   .log-panel{ height:300px; }
@@ -82,8 +83,7 @@
   .log-body::before{ content:""; position:absolute; inset:0; pointer-events:none;
                       background:repeating-linear-gradient(to bottom, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 1px, transparent 1px, transparent 3px); }
   .log-body div{ white-space:pre-wrap; position:relative; z-index:1; }
-  .log-body div.is-indent{ padding-left:1.4em; opacity:0.85; }
-  .log-body div.is-note{ color:var(--ink-muted); font-style:italic; opacity:0.8; }
+  .log-body div.is-note{ color:var(--ink-muted); font-style:italic; opacity:0.85; }
 
   .reg-scroll{ max-height:280px; overflow-y:auto; }
   .reg-table{ width:100%; border-collapse:collapse; font-family:var(--mono); font-size:0.76rem; font-variant-numeric: tabular-nums; }
@@ -97,14 +97,15 @@
   .node{ cursor:pointer; }
   .node-box{ fill:var(--panel-bg); stroke:var(--trace); stroke-width:1.5; transition: stroke 0.3s, stroke-width 0.2s; }
   .node.is-found .node-box{ stroke:var(--accent); }
-  .node.is-probing .node-box{ stroke:var(--accent-glow); animation:pulse 0.9s ease-in-out infinite; }
+  .node.is-probing .node-box{ stroke:var(--accent-glow); animation:pulse 0.9s ease-in-out 1; }
   .node.is-selected .node-box{ stroke-width:2.5; }
   .node:focus-visible .node-box{ stroke:var(--accent-glow); stroke-width:3; }
   .node-rc .node-box{ fill:var(--accent); stroke:var(--accent); }
   .node-rc .node-name{ fill:var(--accent-ink); }
 
   .node-tag{ font-family:var(--mono); font-size:9px; letter-spacing:0.06em; fill:var(--ink-muted); }
-  .node-name{ font-family:var(--mono); font-size:12px; font-weight:600; fill:var(--ink); letter-spacing:0.01em; }
+  .node-name{ font-family:var(--mono); font-size:12px; font-weight:600; fill:var(--ink); letter-spacing:0.01em;
+              font-variant-numeric: tabular-nums; }
   .node-idtext{ font-family:var(--mono); font-size:10px; fill:var(--ink-muted); font-variant-numeric: tabular-nums; }
   .node-badge{ font-family:var(--mono); font-size:10px; fill:var(--accent); opacity:0; transition:opacity 0.3s;
                font-variant-numeric: tabular-nums; }
@@ -123,7 +124,7 @@
   <header class="topbar">
     <div class="title-block">
       <h1>PCIe ENUMERATION WALKER</h1>
-      <p class="subtitle">A depth-first walk of <code>python_sim/topology.yaml</code> — the same recursive bus scan <code>main.py</code> performs, assigning secondary/subordinate bus numbers as it goes. Step through it or let it run.</p>
+      <p class="subtitle">Reads <code>example/devices_unsorted.json</code> straight from your Python enumerator and replays it in the order it was actually discovered. Nothing here re-runs the walk — it only displays what <code>main.py</code> already decided.</p>
     </div>
     <div class="transport">
       <button id="btn-reset" class="xport-btn" type="button">⟲ Reset</button>
@@ -136,16 +137,16 @@
 
   <div class="legend">
     <span class="legend-item"><span class="swatch"></span>undiscovered</span>
-    <span class="legend-item"><span class="swatch swatch-probing"></span>probing</span>
+    <span class="legend-item"><span class="swatch swatch-probing"></span>revealing</span>
     <span class="legend-item"><span class="swatch swatch-found"></span>discovered</span>
     <span class="legend-item legend-note">click any device to inspect its config space →</span>
   </div>
 
   <main class="workbench">
     <section class="tree-pane">
-      <div class="panel-head">Device Tree — <span>topology.yaml</span></div>
+      <div class="panel-head">Device Tree — <span>example/devices_unsorted.json</span></div>
       <div class="tree-scroll">
-        <svg id="tree-svg" viewBox="0 0 800 620"></svg>
+        <svg id="tree-svg"></svg>
       </div>
     </section>
 
@@ -163,135 +164,105 @@
     </aside>
   </main>
 
-  <footer class="note">Node badges read <code>B{bus}:D{dev}</code>, and for bridges <code>→{secondary}–{subordinate}</code> once that subtree finishes. BAR rows show declared size only — address assignment is the next thing being built in the Python sim.</footer>
+  <footer class="note">Tree shape and every value shown come from the JSON export — parent/child links are found by matching each device's <code>bus</code> against another device's <code>secondary_bus</code>, nothing is recomputed. BAR addresses read "unassigned" until the Python side writes real ones.</footer>
 </div>
 
 <script>
 (function(){
   "use strict";
   const NS = "http://www.w3.org/2000/svg";
+  const DATA_URL = "../example/devices_unsorted.json";
 
-  const DEVICES = {
-    rc:   { kind:'root_complex', name:'Root Complex' },
-    rp0:  { kind:'root_port', name:'Root Port 0', vid:0x8086, did:0x352E },
-    rp1:  { kind:'root_port', name:'Root Port 1', vid:0x8086, did:0x352F },
-    rp2:  { kind:'root_port', name:'Root Port 2', vid:0x8086, did:0x3530 },
-    sw1:  { kind:'switch_upstream', name:'Switch 1', vid:0x10B5, did:0x8725 },
-    dp0:  { kind:'switch_downstream', name:'Downstream Port 0', vid:0x10B5, did:0x8747 },
-    dp1:  { kind:'switch_downstream', name:'Downstream Port 1', vid:0x10B5, did:0x8747 },
-    nvme: { kind:'endpoint', name:'NVMe SSD', vid:0x144D, did:0xA808, baseClass:0x01, subClass:0x08, progIf:0x02,
-            bars:[{size:16384, kind:'mem64', prefetch:false}] },
-    eth:  { kind:'endpoint', name:'Ethernet', vid:0x14E4, did:0x1657, baseClass:0x02, subClass:0x00, progIf:0x00,
-            bars:[{size:262144, kind:'mem64', prefetch:false}] },
-    nic:  { kind:'endpoint', name:'NIC', vid:0x8086, did:0x1533, baseClass:0x02, subClass:0x00, progIf:0x00,
-            bars:[{size:131072, kind:'mem64', prefetch:false}] },
-    gpu:  { kind:'endpoint', name:'GPU', vid:0x10DE, did:0x2204, baseClass:0x03, subClass:0x00, progIf:0x00,
-            bars:[{size:268435456, kind:'mem64', prefetch:true}, {size:33554432, kind:'mem64', prefetch:false}] },
-  };
+  const NODE_W = 156, NODE_H = 70, RC_W = 230, RC_H = 46;
+  const ROW_H = 130, SLOT_W = 190, MARGIN = 40;
 
-  const CHILDREN = {
-    rc:  ['rp0','rp1','rp2'],
-    rp0: ['sw1'],
-    rp1: ['nic'],
-    rp2: ['gpu'],
-    sw1: ['dp0','dp1'],
-    dp0: ['nvme'],
-    dp1: ['eth'],
-  };
-
-  const POS = {
-    rc:   [463, 45],
-    rp0:  [210, 175], rp1: [495, 175], rp2: [685, 175],
-    sw1:  [210, 305], nic: [495, 305], gpu: [685, 305],
-    dp0:  [115, 435], dp1: [305, 435],
-    nvme: [115, 565], eth: [305, 565],
-  };
-
-  const TAG = { root_port:'RP', switch_upstream:'SW', switch_downstream:'DP', endpoint:'EP' };
-  const BRIDGE_KINDS = ['root_port','switch_upstream','switch_downstream'];
-
-  function isBridge(id){ return BRIDGE_KINDS.includes(DEVICES[id].kind); }
-  function parentOf(id){
-    for (const p in CHILDREN){ if (CHILDREN[p].includes(id)) return p; }
-    return null;
-  }
-  function hex4(n){ return '0x' + n.toString(16).padStart(4,'0'); }
-  function hex2(n){ return '0x' + n.toString(16).padStart(2,'0'); }
+  function hex2(n){ return '0x' + (n & 0xFF).toString(16).padStart(2,'0'); }
+  function hex4(n){ return '0x' + (n & 0xFFFF).toString(16).padStart(4,'0'); }
   function fmtSize(bytes){
     if (bytes >= 1073741824) return (bytes/1073741824)+' GiB';
     if (bytes >= 1048576) return (bytes/1048576)+' MiB';
     if (bytes >= 1024) return (bytes/1024)+' KiB';
     return bytes+' B';
   }
+  function addr(d){ return `${hex2(d.bus).slice(2)}:${hex2(d.device).slice(2)}.${d.function.toString(16)}`; }
+  function isBridge(d){ return d.secondary_bus != null; }
 
-  // ---- build the DFS step sequence (mirrors main.py's enumerate_pcie) ----
-  function buildSteps(){
-    const steps = [];
-    const nextBus = { v: 1 };
-    function enumerate(parentId, bus){
-      const kids = CHILDREN[parentId] || [];
-      let lastDev = -1;
-      for (let dev = 0; dev < 32; dev++){
-        const childId = kids[dev];
-        if (!childId) continue;
-        lastDev = dev;
-        steps.push({ type:'probe', id:childId, bus, dev });
-        if (isBridge(childId)){
-          const assigned = nextBus.v++;
-          steps.push({ type:'secondary', id:childId, bus, dev, secondary:assigned });
-          enumerate(childId, assigned);
-          steps.push({ type:'subordinate', id:childId, bus, dev, subordinate: nextBus.v - 1 });
-        } else {
-          steps.push({ type:'endpoint', id:childId, bus, dev });
-        }
-      }
-      steps.push({ type:'scandone', bus, from: lastDev + 1 });
+  let RECORDS = [];      // reveal order == devices_unsorted.json array order (post-order from the Python walk)
+  const RC = { isRC: true };
+
+  function nodeKey(d){ return d.isRC ? 'rc' : `${d.bus}:${d.device}.${d.function}`; }
+  function childrenOf(d){
+    if (d.isRC) return RECORDS.filter(r => r.bus === 0);
+    if (!isBridge(d)) return [];
+    return RECORDS.filter(r => r.bus === d.secondary_bus);
+  }
+  function parentOf(d){
+    if (d.isRC) return null;
+    if (d.bus === 0) return RC;
+    return RECORDS.find(r => r.secondary_bus === d.bus) || null;
+  }
+
+  // ---- layout: pure geometry, derived only from the bus / secondary_bus links above ----
+  const LAYOUT = new Map(); // key -> { x, depth, record }
+  let nextSlot = 0, maxDepth = 0;
+
+  function place(d, depth){
+    maxDepth = Math.max(maxDepth, depth);
+    const kids = childrenOf(d);
+    let x;
+    if (kids.length === 0){
+      x = nextSlot++;
+    } else {
+      kids.forEach(k => place(k, depth + 1));
+      const xs = kids.map(k => LAYOUT.get(nodeKey(k)).x);
+      x = (Math.min(...xs) + Math.max(...xs)) / 2;
     }
-    enumerate('rc', 0);
-    return steps;
+    LAYOUT.set(nodeKey(d), { x, depth, record: d });
   }
 
-  function freshState(){
-    const s = {};
-    Object.keys(DEVICES).forEach(id => { s[id] = { bus:null, dev:null, secondary:null, subordinate:null }; });
-    return s;
-  }
+  function px(entry){ return MARGIN + entry.x * SLOT_W + SLOT_W / 2; }
+  function py(entry){ return MARGIN + entry.depth * ROW_H + (entry.record.isRC ? RC_H : NODE_H) / 2; }
 
-  // ---- render the tree ----
   const svg = document.getElementById('tree-svg');
   const nodeEls = {};
   const edgeEls = {};
 
-  function nodeHeight(id){ return id === 'rc' ? 46 : 70; }
-  function nodeWidth(id){ return id === 'rc' ? 230 : 156; }
+  function buildSvg(){
+    const width = MARGIN * 2 + nextSlot * SLOT_W;
+    const height = MARGIN * 2 + (maxDepth + 1) * ROW_H;
+    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    svg.setAttribute('width', width);
+    svg.style.minWidth = width + 'px';
 
-  Object.keys(CHILDREN).forEach(parentId => {
-    CHILDREN[parentId].forEach(childId => {
-      const [px, py] = POS[parentId];
-      const [cx, cy] = POS[childId];
-      const startY = py + nodeHeight(parentId)/2;
-      const endY = cy - nodeHeight(childId)/2;
-      const midY = startY + (endY - startY)/2;
+    // edges first, so nodes draw on top
+    LAYOUT.forEach((entry, key) => {
+      if (entry.record.isRC) return;
+      const parent = parentOf(entry.record);
+      const pEntry = LAYOUT.get(nodeKey(parent));
+      const startY = py(pEntry) + (parent.isRC ? RC_H : NODE_H) / 2;
+      const endY = py(entry) - NODE_H / 2;
+      const midY = startY + (endY - startY) / 2;
       const path = document.createElementNS(NS, 'path');
-      path.setAttribute('d', `M ${px} ${startY} V ${midY} H ${cx} V ${endY}`);
+      path.setAttribute('d', `M ${px(pEntry)} ${startY} V ${midY} H ${px(entry)} V ${endY}`);
       path.setAttribute('class', 'edge');
       svg.appendChild(path);
-      edgeEls[childId] = path;
+      edgeEls[key] = path;
     });
-  });
 
-  function makeNode(id){
-    const d = DEVICES[id];
-    const [x, y] = POS[id];
-    const isRC = id === 'rc';
-    const w = nodeWidth(id), h = nodeHeight(id);
+    LAYOUT.forEach((entry, key) => makeNode(key, entry));
+  }
+
+  function makeNode(key, entry){
+    const d = entry.record;
+    const isRC = !!d.isRC;
+    const w = isRC ? RC_W : NODE_W, h = isRC ? RC_H : NODE_H;
+    const x = px(entry), y = py(entry);
 
     const g = document.createElementNS(NS, 'g');
     g.setAttribute('class', 'node' + (isRC ? ' node-rc' : ''));
-    g.setAttribute('data-id', id);
     g.setAttribute('tabindex', '0');
     g.setAttribute('role', 'button');
-    g.setAttribute('aria-label', d.name);
+    g.setAttribute('aria-label', isRC ? 'Root Complex' : `device ${addr(d)}`);
     g.setAttribute('transform', `translate(${x - w/2}, ${y - h/2})`);
 
     const rect = document.createElementNS(NS, 'rect');
@@ -303,21 +274,21 @@
     if (!isRC){
       const tag = document.createElementNS(NS, 'text');
       tag.setAttribute('x', 10); tag.setAttribute('y', 15); tag.setAttribute('class', 'node-tag');
-      tag.textContent = TAG[d.kind];
+      tag.textContent = isBridge(d) ? 'BRIDGE' : 'ENDPOINT';
       g.appendChild(tag);
     }
 
     const name = document.createElementNS(NS, 'text');
     name.setAttribute('x', w/2); name.setAttribute('y', isRC ? h/2 + 5 : 33);
     name.setAttribute('text-anchor', 'middle'); name.setAttribute('class', 'node-name');
-    name.textContent = d.name.toUpperCase();
+    name.textContent = isRC ? 'ROOT COMPLEX' : addr(d);
     g.appendChild(name);
 
     if (!isRC){
       const idText = document.createElementNS(NS, 'text');
       idText.setAttribute('x', w/2); idText.setAttribute('y', 48);
       idText.setAttribute('text-anchor', 'middle'); idText.setAttribute('class', 'node-idtext');
-      idText.textContent = `${hex4(d.vid)}:${hex4(d.did)}`;
+      idText.textContent = `${hex4(d.vendor_id)}:${hex4(d.device_id)}`;
       g.appendChild(idText);
 
       badge = document.createElementNS(NS, 'text');
@@ -326,63 +297,62 @@
       g.appendChild(badge);
     }
 
-    g.addEventListener('click', () => selectNode(id));
+    g.addEventListener('click', () => selectNode(key));
     g.addEventListener('keydown', e => {
-      if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); selectNode(id); }
+      if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); selectNode(key); }
     });
 
     svg.appendChild(g);
-    nodeEls[id] = { group: g, badge };
+    nodeEls[key] = { group: g, badge };
   }
 
-  Object.keys(DEVICES).forEach(makeNode);
-
-  function updateBadge(id, st){
-    const el = nodeEls[id].badge;
+  function updateBadge(d){
+    const el = nodeEls[nodeKey(d)].badge;
     if (!el) return;
-    if (st.bus == null){ el.textContent = ''; el.classList.remove('shown'); return; }
-    let t = `B${st.bus}:D${st.dev}`;
-    if (st.secondary != null) t += ` →${st.secondary}`;
-    if (st.subordinate != null) t += `–${st.subordinate}`;
-    el.textContent = t;
+    el.textContent = isBridge(d)
+      ? `sec ${d.secondary_bus}–${d.subordinate_bus}`
+      : `${d.bars.length} BAR${d.bars.length === 1 ? '' : 's'}`;
     el.classList.add('shown');
   }
 
-  function highlightPath(id){
-    let cur = id;
-    while (cur){
-      if (edgeEls[cur]) edgeEls[cur].classList.add('lit');
+  function highlightPathFrom(d){
+    let cur = d;
+    while (cur && !cur.isRC){
+      const el = edgeEls[nodeKey(cur)];
+      if (el) el.classList.add('lit');
       cur = parentOf(cur);
     }
   }
 
-  // ---- register inspector ----
-  function renderRegisterTable(id){
-    const d = DEVICES[id];
-    const st = liveState[id] || {};
+  // ---- register inspector: reads whichever record is selected, verbatim ----
+  function renderRegisterTable(key){
+    const entry = LAYOUT.get(key);
+    const d = entry.record;
+    const target = document.getElementById('reg-target');
     const tbody = document.getElementById('reg-body');
     tbody.innerHTML = '';
-    const target = document.getElementById('reg-target');
-    target.textContent = id === 'rc'
-      ? 'ROOT COMPLEX'
-      : `${d.name.toUpperCase()} — bus ${st.bus ?? '—'} dev ${st.dev ?? '—'} fn 0`;
 
-    const rows = [];
-    if (id === 'rc'){
-      rows.push(['—', 'ORIGIN', 'bus 0 root — not a config-space device']);
+    let rows;
+    if (d.isRC){
+      target.textContent = 'ROOT COMPLEX';
+      rows = [['—', 'ORIGIN', 'bus 0 root — not a config-space device']];
     } else {
-      rows.push(['0x00', 'VENDOR_ID', hex4(d.vid)]);
-      rows.push(['0x02', 'DEVICE_ID', hex4(d.did)]);
-      rows.push(['0x0E', 'HEADER_TYPE', isBridge(id) ? '0x01 (bridge)' : '0x00 (endpoint)']);
-      if (isBridge(id)){
-        rows.push(['0x19', 'SECONDARY_BUS', st.secondary != null ? st.secondary : '—']);
-        rows.push(['0x1A', 'SUBORDINATE_BUS', st.subordinate != null ? st.subordinate : '—']);
+      target.textContent = `${addr(d)} — ${hex4(d.vendor_id)}:${hex4(d.device_id)}`;
+      rows = [
+        ['0x00', 'VENDOR_ID', hex4(d.vendor_id)],
+        ['0x02', 'DEVICE_ID', hex4(d.device_id)],
+        ['0x0E', 'HEADER_TYPE', isBridge(d) ? '0x01 (bridge)' : '0x00 (endpoint)'],
+      ];
+      if (isBridge(d)){
+        rows.push(['0x19', 'SECONDARY_BUS', d.secondary_bus]);
+        rows.push(['0x1A', 'SUBORDINATE_BUS', d.subordinate_bus]);
       } else {
-        rows.push(['0x0B', 'BASE_CLASS', hex2(d.baseClass)]);
-        rows.push(['0x0A', 'SUBCLASS', hex2(d.subClass)]);
-        rows.push(['0x09', 'PROG_IF', hex2(d.progIf)]);
-        d.bars.forEach((bar, i) => {
-          rows.push([hex2(0x10 + 4*i), `BAR${i}`, `${fmtSize(bar.size)} · ${bar.kind}${bar.prefetch ? ' · prefetch' : ''}`]);
+        rows.push(['0x0B', 'BASE_CLASS', hex2(d.base_class)]);
+        rows.push(['0x0A', 'SUBCLASS', hex2(d.sub_class)]);
+        d.bars.forEach(bar => {
+          const a = bar.address ? ('0x' + bar.address.toString(16)) : 'unassigned';
+          rows.push([hex2(0x10 + 4*bar.index), `BAR${bar.index}`,
+                     `${fmtSize(bar.size)} · ${bar.kind}${bar.prefetchable ? ' · prefetch' : ''} · addr ${a}`]);
         });
       }
     }
@@ -398,12 +368,12 @@
     });
   }
 
-  let selectedId = null;
-  function selectNode(id){
-    if (selectedId && nodeEls[selectedId]) nodeEls[selectedId].group.classList.remove('is-selected');
-    selectedId = id;
-    nodeEls[id].group.classList.add('is-selected');
-    renderRegisterTable(id);
+  let selectedKey = null;
+  function selectNode(key){
+    if (selectedKey && nodeEls[selectedKey]) nodeEls[selectedKey].group.classList.remove('is-selected');
+    selectedKey = key;
+    nodeEls[key].group.classList.add('is-selected');
+    renderRegisterTable(key);
   }
 
   // ---- log ----
@@ -417,69 +387,35 @@
   }
   function clearLog(){ document.getElementById('log').innerHTML = ''; }
 
-  function formatProbeLog(step){
-    const d = DEVICES[step.id];
-    const ht = isBridge(step.id) ? '0x01' : '0x00';
-    return `bus${step.bus}:dev${step.dev}: venid: ${hex4(d.vid)} header_type: ${ht}`;
-  }
-  function formatEndpointLog(step){
-    const d = DEVICES[step.id];
-    return `bus${step.bus}:dev${step.dev}: venid: ${hex4(d.vid)} class: ${hex2(d.baseClass)}:${hex2(d.subClass)}`;
+  function formatLog(d){
+    const a = addr(d), ids = `${hex4(d.vendor_id)}:${hex4(d.device_id)}`;
+    if (isBridge(d)) return `${a}  ${ids}  bridge → secondary ${d.secondary_bus}, subordinate ${d.subordinate_bus}`;
+    const bars = d.bars.length ? d.bars.map(b => `BAR${b.index}=${fmtSize(b.size)}`).join(', ') : 'no BARs';
+    return `${a}  ${ids}  class ${hex2(d.base_class)}:${hex2(d.sub_class)}  ${bars}`;
   }
 
-  // ---- playback state ----
-  let steps = buildSteps();
-  let idx = 0;
-  let liveState = freshState();
-  let playing = false;
-  let timer = null;
-  const SPEEDS = [900, 450, 220];
-  const SPEED_LABELS = ['1×', '2×', '4×'];
+  // ---- playback: steps through RECORDS in file order, one device per step ----
+  let idx = 0, playing = false, timer = null;
+  const SPEEDS = [900, 450, 220], SPEED_LABELS = ['1×', '2×', '4×'];
   let speedIdx = 0;
 
-  function applyStep(step){
-    if (step.type === 'probe'){
-      liveState[step.id].bus = step.bus; liveState[step.id].dev = step.dev;
-      highlightPath(step.id);
-      nodeEls[step.id].group.classList.add('is-probing');
-      updateBadge(step.id, liveState[step.id]);
-      selectNode(step.id);
-      logLine(formatProbeLog(step));
-    } else if (step.type === 'secondary'){
-      liveState[step.id].secondary = step.secondary;
-      updateBadge(step.id, liveState[step.id]);
-      renderRegisterTable(step.id);
-      logLine(`↳ write SECONDARY_BUS = ${step.secondary} (bus${step.bus} dev${step.dev})`, 'is-indent');
-    } else if (step.type === 'subordinate'){
-      liveState[step.id].subordinate = step.subordinate;
-      nodeEls[step.id].group.classList.remove('is-probing');
-      nodeEls[step.id].group.classList.add('is-found');
-      updateBadge(step.id, liveState[step.id]);
-      if (selectedId === step.id) renderRegisterTable(step.id);
-      logLine(`↰ write SUBORDINATE_BUS = ${step.subordinate} (bus${step.bus} dev${step.dev})`, 'is-indent');
-    } else if (step.type === 'endpoint'){
-      nodeEls[step.id].group.classList.remove('is-probing');
-      nodeEls[step.id].group.classList.add('is-found');
-      updateBadge(step.id, liveState[step.id]);
-      if (selectedId === step.id) renderRegisterTable(step.id);
-      logLine(formatEndpointLog(step));
-    } else if (step.type === 'scandone'){
-      logLine(`bus${step.bus}: dev${step.from}-31 no response (0xFFFF) — scan of bus${step.bus} done`, 'is-note');
-    }
-  }
-
   function updateStepCounter(){
-    document.getElementById('step-counter').textContent = `STEP ${Math.min(idx, steps.length)}/${steps.length}`;
+    document.getElementById('step-counter').textContent = `STEP ${Math.min(idx, RECORDS.length)}/${RECORDS.length}`;
   }
 
   function stepForward(){
-    if (idx >= steps.length) return;
-    applyStep(steps[idx]); idx++;
+    if (idx >= RECORDS.length) return;
+    const d = RECORDS[idx]; idx++;
+    const el = nodeEls[nodeKey(d)].group;
+    el.classList.add('is-probing', 'is-found');
+    updateBadge(d);
+    highlightPathFrom(d);
+    selectNode(nodeKey(d));
+    logLine(formatLog(d));
     updateStepCounter();
-    if (idx >= steps.length){
+    if (idx >= RECORDS.length){
       pause();
-      const buses = new Set(Object.values(liveState).map(s => s.bus).filter(v => v != null));
-      logLine(`— enumeration complete: ${buses.size} buses, ${Object.values(liveState).filter(s=>s.bus!=null).length} devices —`);
+      logLine(`— all ${RECORDS.length} devices revealed —`, 'is-note');
     }
   }
 
@@ -489,14 +425,11 @@
     btn.lastChild.textContent = isPlaying ? 'Pause' : 'Run';
   }
   function play(){
-    if (playing || idx >= steps.length) return;
+    if (playing || idx >= RECORDS.length) return;
     playing = true; setPlayButtonState(true);
     timer = setInterval(stepForward, SPEEDS[speedIdx]);
   }
-  function pause(){
-    playing = false; setPlayButtonState(false);
-    clearInterval(timer); timer = null;
-  }
+  function pause(){ playing = false; setPlayButtonState(false); clearInterval(timer); timer = null; }
   function togglePlay(){ playing ? pause() : play(); }
   function cycleSpeed(){
     speedIdx = (speedIdx + 1) % SPEEDS.length;
@@ -515,18 +448,45 @@
 
   function doReset(){
     pause();
-    idx = 0; steps = buildSteps(); liveState = freshState();
+    idx = 0;
     clearVisualState(); clearLog();
     updateStepCounter();
     selectNode('rc');
-    logLine('topology.yaml loaded — 11 devices in the tree. Press Step or Run to begin.', 'is-note');
+    logLine(`example/devices_unsorted.json loaded — ${RECORDS.length} devices. Press Step or Run to replay discovery order.`, 'is-note');
   }
 
-  document.getElementById('btn-reset').addEventListener('click', doReset);
-  document.getElementById('btn-step').addEventListener('click', () => { pause(); stepForward(); });
-  document.getElementById('btn-play').addEventListener('click', togglePlay);
-  document.getElementById('btn-speed').addEventListener('click', cycleSpeed);
+  function wireControls(){
+    document.getElementById('btn-reset').addEventListener('click', doReset);
+    document.getElementById('btn-step').addEventListener('click', () => { pause(); stepForward(); });
+    document.getElementById('btn-play').addEventListener('click', togglePlay);
+    document.getElementById('btn-speed').addEventListener('click', cycleSpeed);
+  }
 
-  doReset();
+  function showLoadError(err){
+    logLine(`Could not load ${DATA_URL}`, 'is-note');
+    logLine(String(err), 'is-note');
+    logLine('If you opened this file directly (file://), the browser blocks local fetches.', 'is-note');
+    logLine('Serve the repo over HTTP instead, e.g. from the repo root:', 'is-note');
+    logLine('  python3 -m http.server', 'is-note');
+    logLine('then open http://localhost:8000/python_sim/enumeration_walker.html', 'is-note');
+    ['btn-reset','btn-step','btn-play','btn-speed'].forEach(id => { document.getElementById(id).disabled = true; });
+  }
+
+  async function init(){
+    wireControls();
+    try {
+      const res = await fetch(DATA_URL);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      RECORDS = await res.json();
+    } catch (err){
+      showLoadError(err);
+      return;
+    }
+    place(RC, 0);
+    buildSvg();
+    doReset();
+  }
+
+  init();
 })();
 </script>
