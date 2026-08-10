@@ -81,7 +81,7 @@
                color:var(--ink-muted); padding:10px 13px; border-bottom:1px solid var(--border); }
   .panel-head span{ color:var(--accent); }
 
-  .tree-scroll{ overflow-x:auto; padding:14px; }
+  .tree-scroll{ overflow-x:auto; padding:8px; }
   #tree-svg{ display:block; height:auto; }
 
   .instrument-col{ display:flex; flex-direction:column; gap:16px; }
@@ -184,7 +184,7 @@
   const DATA_URL = "../example/devices_unsorted.json";
 
   const NODE_W = 156, NODE_H = 70, RC_W = 230, RC_H = 46;
-  const ROW_H = 130, SLOT_W = 190, MARGIN = 40;
+  const ROW_H = 110, SLOT_W = 170, MARGIN = 20;
 
   function hex2(n){ return '0x' + (n & 0xFF).toString(16).padStart(2,'0'); }
   function hex4(n){ return '0x' + (n & 0xFFFF).toString(16).padStart(4,'0'); }
@@ -210,6 +210,22 @@
     if (d.isRC) return null;
     if (d.bus === 0) return RC;
     return RECORDS.find(r => r.secondary_bus === d.bus) || null;
+  }
+
+  // devices_unsorted.json is in post-order (a bridge's own record only lands
+  // after everything behind it), which reads backwards for an animation --
+  // it reveals the deepest leaf first and the root last. This walks the same
+  // already-built tree top-down instead: parent before children, siblings in
+  // device order. No new facts, just a different traversal of the same data.
+  function buildRevealOrder(){
+    const order = [];
+    (function visit(d){
+      childrenOf(d).slice().sort((a, b) => a.device - b.device).forEach(k => {
+        order.push(k);
+        visit(k);
+      });
+    })(RC);
+    return order;
   }
 
   // ---- layout: pure geometry, derived only from the bus / secondary_bus links above ----
@@ -404,18 +420,19 @@
     return `${a}  ${ids}  class ${hex2(d.base_class)}:${hex2(d.sub_class)}  ${bars}`;
   }
 
-  // ---- playback: steps through RECORDS in file order, one device per step ----
+  // ---- playback: steps through a top-down pre-order walk, one device per step ----
+  let REVEAL_ORDER = [];
   let idx = 0, playing = false, timer = null;
   const SPEEDS = [900, 450, 220], SPEED_LABELS = ['1×', '2×', '4×'];
   let speedIdx = 0;
 
   function updateStepCounter(){
-    document.getElementById('step-counter').textContent = `STEP ${Math.min(idx, RECORDS.length)}/${RECORDS.length}`;
+    document.getElementById('step-counter').textContent = `STEP ${Math.min(idx, REVEAL_ORDER.length)}/${REVEAL_ORDER.length}`;
   }
 
   function stepForward(){
-    if (idx >= RECORDS.length) return;
-    const d = RECORDS[idx]; idx++;
+    if (idx >= REVEAL_ORDER.length) return;
+    const d = REVEAL_ORDER[idx]; idx++;
     const el = nodeEls[nodeKey(d)].group;
     el.classList.add('is-probing', 'is-found');
     updateBadge(d);
@@ -423,9 +440,9 @@
     selectNode(nodeKey(d));
     logLine(formatLog(d));
     updateStepCounter();
-    if (idx >= RECORDS.length){
+    if (idx >= REVEAL_ORDER.length){
       pause();
-      logLine(`— all ${RECORDS.length} devices revealed —`, 'is-note');
+      logLine(`— all ${REVEAL_ORDER.length} devices revealed —`, 'is-note');
     }
   }
 
@@ -435,7 +452,7 @@
     btn.lastChild.textContent = isPlaying ? 'Pause' : 'Run';
   }
   function play(){
-    if (playing || idx >= RECORDS.length) return;
+    if (playing || idx >= REVEAL_ORDER.length) return;
     playing = true; setPlayButtonState(true);
     timer = setInterval(stepForward, SPEEDS[speedIdx]);
   }
@@ -462,7 +479,7 @@
     clearVisualState(); clearLog();
     updateStepCounter();
     selectNode('rc');
-    logLine(`example/devices_unsorted.json loaded — ${RECORDS.length} devices. Press Step or Run to replay discovery order.`, 'is-note');
+    logLine(`example/devices_unsorted.json loaded — ${RECORDS.length} devices. Press Step or Run to walk the tree top-down.`, 'is-note');
   }
 
   function wireControls(){
@@ -494,6 +511,7 @@
     }
     place(RC, 0);
     buildSvg();
+    REVEAL_ORDER = buildRevealOrder();
     doReset();
   }
 
