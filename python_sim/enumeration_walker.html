@@ -1,0 +1,532 @@
+<style>
+  :root{
+    --bg:#f2efe6; --bg-elevated:#fbf8ef; --panel-bg:#ffffff;
+    --ink:#1c2420; --ink-muted:#5b6b60; --border:#d8d2c0;
+    --trace:#c7c0aa; --accent:#a97a1f; --accent-glow:#c99a3a; --accent-ink:#2a1c04;
+    --log-bg:#0a0908; --log-text:#e8b34a;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", "JetBrains Mono", Consolas, "Liberation Mono", monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0c1310; --bg-elevated:#121b17; --panel-bg:#0f1815;
+      --ink:#e7ece3; --ink-muted:#87988c; --border:#233029;
+      --trace:#3a4a40; --accent:#d9a441; --accent-glow:#ffc85c; --accent-ink:#1b1204;
+      --log-bg:#0a0a08; --log-text:#e8b34a;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0c1310; --bg-elevated:#121b17; --panel-bg:#0f1815;
+    --ink:#e7ece3; --ink-muted:#87988c; --border:#233029;
+    --trace:#3a4a40; --accent:#d9a441; --accent-glow:#ffc85c; --accent-ink:#1b1204;
+    --log-bg:#0a0a08; --log-text:#e8b34a;
+  }
+  :root[data-theme="light"]{
+    --bg:#f2efe6; --bg-elevated:#fbf8ef; --panel-bg:#ffffff;
+    --ink:#1c2420; --ink-muted:#5b6b60; --border:#d8d2c0;
+    --trace:#c7c0aa; --accent:#a97a1f; --accent-glow:#c99a3a; --accent-ink:#2a1c04;
+    --log-bg:#0a0908; --log-text:#e8b34a;
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ background:var(--bg); }
+  body{ margin:0; }
+
+  .app{ max-width:1180px; margin:0 auto; padding:22px 20px 40px; display:flex; flex-direction:column; gap:16px;
+        color:var(--ink); font-family:var(--sans); }
+
+  .topbar{ display:flex; flex-wrap:wrap; justify-content:space-between; align-items:flex-start; gap:16px; }
+  .title-block h1{ font-family:var(--mono); font-size:1.25rem; letter-spacing:0.07em; margin:0 0 6px; text-wrap:balance; color:var(--ink); }
+  .subtitle{ margin:0; max-width:58ch; color:var(--ink-muted); font-size:0.92rem; line-height:1.55; }
+  .subtitle code{ font-family:var(--mono); background:var(--bg-elevated); padding:1px 5px; border-radius:3px; border:1px solid var(--border); font-size:0.85em; }
+
+  .transport{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .xport-btn{ font-family:var(--mono); font-size:0.72rem; letter-spacing:0.05em; text-transform:uppercase;
+              padding:8px 13px; background:var(--bg-elevated); color:var(--ink); border:1px solid var(--border);
+              border-radius:4px; cursor:pointer; display:inline-flex; align-items:center; gap:7px; }
+  .xport-btn:hover{ border-color:var(--accent); color:var(--accent); }
+  .xport-btn:focus-visible{ outline:2px solid var(--accent-glow); outline-offset:2px; }
+  .xport-btn:active{ transform:translateY(1px); }
+  .xport-primary{ background:var(--accent); color:var(--accent-ink); border-color:var(--accent); font-weight:600; }
+  .xport-primary:hover{ color:var(--accent-ink); border-color:var(--accent-glow); background:var(--accent-glow); }
+  .led{ width:7px; height:7px; border-radius:50%; background:rgba(0,0,0,0.25); display:inline-block; }
+  .xport-primary.is-playing .led{ background:#3fd67a; box-shadow:0 0 5px #3fd67a; }
+  .step-counter{ font-family:var(--mono); font-size:0.72rem; color:var(--ink-muted); letter-spacing:0.04em;
+                 margin-left:2px; font-variant-numeric: tabular-nums; white-space:nowrap; }
+
+  .legend{ display:flex; gap:18px; flex-wrap:wrap; align-items:center; font-family:var(--mono); font-size:0.7rem;
+           color:var(--ink-muted); text-transform:uppercase; letter-spacing:0.04em; padding-bottom:10px;
+           border-bottom:1px solid var(--border); }
+  .legend-item{ display:inline-flex; align-items:center; gap:6px; }
+  .legend-note{ text-transform:none; letter-spacing:0; font-family:var(--sans); font-style:italic; font-size:0.78rem; }
+  .swatch{ width:11px; height:11px; border-radius:3px; display:inline-block; border:1.5px solid var(--trace); background:var(--panel-bg); }
+  .swatch-probing{ border-color:var(--accent-glow); border-width:2px; }
+  .swatch-found{ border-color:var(--accent); }
+
+  .workbench{ display:grid; grid-template-columns: 1fr 340px; gap:16px; align-items:start; }
+  @media (max-width: 880px){ .workbench{ grid-template-columns: 1fr; } }
+
+  .tree-pane, .panel{ background:var(--bg-elevated); border:1px solid var(--border); border-radius:9px; overflow:hidden; }
+  .panel{ display:flex; flex-direction:column; }
+  .panel-head{ font-family:var(--mono); font-size:0.66rem; letter-spacing:0.09em; text-transform:uppercase;
+               color:var(--ink-muted); padding:10px 13px; border-bottom:1px solid var(--border); }
+  .panel-head span{ color:var(--accent); }
+
+  .tree-scroll{ overflow-x:auto; padding:14px; }
+  #tree-svg{ display:block; width:800px; height:auto; min-width:800px; }
+
+  .instrument-col{ display:flex; flex-direction:column; gap:16px; }
+  .log-panel{ height:300px; }
+  .log-body{ flex:1; overflow-y:auto; background:var(--log-bg); color:var(--log-text); font-family:var(--mono);
+             font-size:0.74rem; line-height:1.6; padding:10px 13px; position:relative; font-variant-numeric: tabular-nums; }
+  .log-body::before{ content:""; position:absolute; inset:0; pointer-events:none;
+                      background:repeating-linear-gradient(to bottom, rgba(255,255,255,0.03) 0px, rgba(255,255,255,0.03) 1px, transparent 1px, transparent 3px); }
+  .log-body div{ white-space:pre-wrap; position:relative; z-index:1; }
+  .log-body div.is-indent{ padding-left:1.4em; opacity:0.85; }
+  .log-body div.is-note{ color:var(--ink-muted); font-style:italic; opacity:0.8; }
+
+  .reg-scroll{ max-height:280px; overflow-y:auto; }
+  .reg-table{ width:100%; border-collapse:collapse; font-family:var(--mono); font-size:0.76rem; font-variant-numeric: tabular-nums; }
+  .reg-table td{ padding:7px 13px; border-bottom:1px solid var(--border); vertical-align:top; }
+  .reg-off{ color:var(--ink-muted); width:48px; }
+  .reg-table tr:last-child td{ border-bottom:none; }
+
+  .edge{ fill:none; stroke:var(--trace); stroke-width:2; transition: stroke 0.4s, stroke-width 0.4s; }
+  .edge.lit{ stroke:var(--accent); stroke-width:2.5; }
+
+  .node{ cursor:pointer; }
+  .node-box{ fill:var(--panel-bg); stroke:var(--trace); stroke-width:1.5; transition: stroke 0.3s, stroke-width 0.2s; }
+  .node.is-found .node-box{ stroke:var(--accent); }
+  .node.is-probing .node-box{ stroke:var(--accent-glow); animation:pulse 0.9s ease-in-out infinite; }
+  .node.is-selected .node-box{ stroke-width:2.5; }
+  .node:focus-visible .node-box{ stroke:var(--accent-glow); stroke-width:3; }
+  .node-rc .node-box{ fill:var(--accent); stroke:var(--accent); }
+  .node-rc .node-name{ fill:var(--accent-ink); }
+
+  .node-tag{ font-family:var(--mono); font-size:9px; letter-spacing:0.06em; fill:var(--ink-muted); }
+  .node-name{ font-family:var(--mono); font-size:12px; font-weight:600; fill:var(--ink); letter-spacing:0.01em; }
+  .node-idtext{ font-family:var(--mono); font-size:10px; fill:var(--ink-muted); font-variant-numeric: tabular-nums; }
+  .node-badge{ font-family:var(--mono); font-size:10px; fill:var(--accent); opacity:0; transition:opacity 0.3s;
+               font-variant-numeric: tabular-nums; }
+  .node-badge.shown{ opacity:1; }
+
+  @keyframes pulse{ 0%,100%{ stroke-width:1.5; } 50%{ stroke-width:3.2; } }
+  @media (prefers-reduced-motion: reduce){
+    .node.is-probing .node-box{ animation:none; stroke-width:3; }
+  }
+
+  footer.note{ font-size:0.78rem; color:var(--ink-muted); line-height:1.5; }
+  footer.note code{ font-family:var(--mono); background:var(--bg-elevated); border:1px solid var(--border); border-radius:3px; padding:1px 5px; }
+</style>
+
+<div class="app">
+  <header class="topbar">
+    <div class="title-block">
+      <h1>PCIe ENUMERATION WALKER</h1>
+      <p class="subtitle">A depth-first walk of <code>python_sim/topology.yaml</code> — the same recursive bus scan <code>main.py</code> performs, assigning secondary/subordinate bus numbers as it goes. Step through it or let it run.</p>
+    </div>
+    <div class="transport">
+      <button id="btn-reset" class="xport-btn" type="button">⟲ Reset</button>
+      <button id="btn-step" class="xport-btn" type="button">Step ▸</button>
+      <button id="btn-play" class="xport-btn xport-primary" type="button"><span class="led"></span>Run</button>
+      <button id="btn-speed" class="xport-btn" type="button">1×</button>
+      <span id="step-counter" class="step-counter">STEP 0/0</span>
+    </div>
+  </header>
+
+  <div class="legend">
+    <span class="legend-item"><span class="swatch"></span>undiscovered</span>
+    <span class="legend-item"><span class="swatch swatch-probing"></span>probing</span>
+    <span class="legend-item"><span class="swatch swatch-found"></span>discovered</span>
+    <span class="legend-item legend-note">click any device to inspect its config space →</span>
+  </div>
+
+  <main class="workbench">
+    <section class="tree-pane">
+      <div class="panel-head">Device Tree — <span>topology.yaml</span></div>
+      <div class="tree-scroll">
+        <svg id="tree-svg" viewBox="0 0 800 620"></svg>
+      </div>
+    </section>
+
+    <aside class="instrument-col">
+      <div class="panel log-panel">
+        <div class="panel-head">Bus Log</div>
+        <div class="log-body" id="log"></div>
+      </div>
+      <div class="panel register-panel">
+        <div class="panel-head">Register Inspector — <span id="reg-target">—</span></div>
+        <div class="reg-scroll">
+          <table class="reg-table"><tbody id="reg-body"></tbody></table>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <footer class="note">Node badges read <code>B{bus}:D{dev}</code>, and for bridges <code>→{secondary}–{subordinate}</code> once that subtree finishes. BAR rows show declared size only — address assignment is the next thing being built in the Python sim.</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  const NS = "http://www.w3.org/2000/svg";
+
+  const DEVICES = {
+    rc:   { kind:'root_complex', name:'Root Complex' },
+    rp0:  { kind:'root_port', name:'Root Port 0', vid:0x8086, did:0x352E },
+    rp1:  { kind:'root_port', name:'Root Port 1', vid:0x8086, did:0x352F },
+    rp2:  { kind:'root_port', name:'Root Port 2', vid:0x8086, did:0x3530 },
+    sw1:  { kind:'switch_upstream', name:'Switch 1', vid:0x10B5, did:0x8725 },
+    dp0:  { kind:'switch_downstream', name:'Downstream Port 0', vid:0x10B5, did:0x8747 },
+    dp1:  { kind:'switch_downstream', name:'Downstream Port 1', vid:0x10B5, did:0x8747 },
+    nvme: { kind:'endpoint', name:'NVMe SSD', vid:0x144D, did:0xA808, baseClass:0x01, subClass:0x08, progIf:0x02,
+            bars:[{size:16384, kind:'mem64', prefetch:false}] },
+    eth:  { kind:'endpoint', name:'Ethernet', vid:0x14E4, did:0x1657, baseClass:0x02, subClass:0x00, progIf:0x00,
+            bars:[{size:262144, kind:'mem64', prefetch:false}] },
+    nic:  { kind:'endpoint', name:'NIC', vid:0x8086, did:0x1533, baseClass:0x02, subClass:0x00, progIf:0x00,
+            bars:[{size:131072, kind:'mem64', prefetch:false}] },
+    gpu:  { kind:'endpoint', name:'GPU', vid:0x10DE, did:0x2204, baseClass:0x03, subClass:0x00, progIf:0x00,
+            bars:[{size:268435456, kind:'mem64', prefetch:true}, {size:33554432, kind:'mem64', prefetch:false}] },
+  };
+
+  const CHILDREN = {
+    rc:  ['rp0','rp1','rp2'],
+    rp0: ['sw1'],
+    rp1: ['nic'],
+    rp2: ['gpu'],
+    sw1: ['dp0','dp1'],
+    dp0: ['nvme'],
+    dp1: ['eth'],
+  };
+
+  const POS = {
+    rc:   [463, 45],
+    rp0:  [210, 175], rp1: [495, 175], rp2: [685, 175],
+    sw1:  [210, 305], nic: [495, 305], gpu: [685, 305],
+    dp0:  [115, 435], dp1: [305, 435],
+    nvme: [115, 565], eth: [305, 565],
+  };
+
+  const TAG = { root_port:'RP', switch_upstream:'SW', switch_downstream:'DP', endpoint:'EP' };
+  const BRIDGE_KINDS = ['root_port','switch_upstream','switch_downstream'];
+
+  function isBridge(id){ return BRIDGE_KINDS.includes(DEVICES[id].kind); }
+  function parentOf(id){
+    for (const p in CHILDREN){ if (CHILDREN[p].includes(id)) return p; }
+    return null;
+  }
+  function hex4(n){ return '0x' + n.toString(16).padStart(4,'0'); }
+  function hex2(n){ return '0x' + n.toString(16).padStart(2,'0'); }
+  function fmtSize(bytes){
+    if (bytes >= 1073741824) return (bytes/1073741824)+' GiB';
+    if (bytes >= 1048576) return (bytes/1048576)+' MiB';
+    if (bytes >= 1024) return (bytes/1024)+' KiB';
+    return bytes+' B';
+  }
+
+  // ---- build the DFS step sequence (mirrors main.py's enumerate_pcie) ----
+  function buildSteps(){
+    const steps = [];
+    const nextBus = { v: 1 };
+    function enumerate(parentId, bus){
+      const kids = CHILDREN[parentId] || [];
+      let lastDev = -1;
+      for (let dev = 0; dev < 32; dev++){
+        const childId = kids[dev];
+        if (!childId) continue;
+        lastDev = dev;
+        steps.push({ type:'probe', id:childId, bus, dev });
+        if (isBridge(childId)){
+          const assigned = nextBus.v++;
+          steps.push({ type:'secondary', id:childId, bus, dev, secondary:assigned });
+          enumerate(childId, assigned);
+          steps.push({ type:'subordinate', id:childId, bus, dev, subordinate: nextBus.v - 1 });
+        } else {
+          steps.push({ type:'endpoint', id:childId, bus, dev });
+        }
+      }
+      steps.push({ type:'scandone', bus, from: lastDev + 1 });
+    }
+    enumerate('rc', 0);
+    return steps;
+  }
+
+  function freshState(){
+    const s = {};
+    Object.keys(DEVICES).forEach(id => { s[id] = { bus:null, dev:null, secondary:null, subordinate:null }; });
+    return s;
+  }
+
+  // ---- render the tree ----
+  const svg = document.getElementById('tree-svg');
+  const nodeEls = {};
+  const edgeEls = {};
+
+  function nodeHeight(id){ return id === 'rc' ? 46 : 70; }
+  function nodeWidth(id){ return id === 'rc' ? 230 : 156; }
+
+  Object.keys(CHILDREN).forEach(parentId => {
+    CHILDREN[parentId].forEach(childId => {
+      const [px, py] = POS[parentId];
+      const [cx, cy] = POS[childId];
+      const startY = py + nodeHeight(parentId)/2;
+      const endY = cy - nodeHeight(childId)/2;
+      const midY = startY + (endY - startY)/2;
+      const path = document.createElementNS(NS, 'path');
+      path.setAttribute('d', `M ${px} ${startY} V ${midY} H ${cx} V ${endY}`);
+      path.setAttribute('class', 'edge');
+      svg.appendChild(path);
+      edgeEls[childId] = path;
+    });
+  });
+
+  function makeNode(id){
+    const d = DEVICES[id];
+    const [x, y] = POS[id];
+    const isRC = id === 'rc';
+    const w = nodeWidth(id), h = nodeHeight(id);
+
+    const g = document.createElementNS(NS, 'g');
+    g.setAttribute('class', 'node' + (isRC ? ' node-rc' : ''));
+    g.setAttribute('data-id', id);
+    g.setAttribute('tabindex', '0');
+    g.setAttribute('role', 'button');
+    g.setAttribute('aria-label', d.name);
+    g.setAttribute('transform', `translate(${x - w/2}, ${y - h/2})`);
+
+    const rect = document.createElementNS(NS, 'rect');
+    rect.setAttribute('width', w); rect.setAttribute('height', h); rect.setAttribute('rx', isRC ? 10 : 6);
+    rect.setAttribute('class', 'node-box');
+    g.appendChild(rect);
+
+    let badge = null;
+    if (!isRC){
+      const tag = document.createElementNS(NS, 'text');
+      tag.setAttribute('x', 10); tag.setAttribute('y', 15); tag.setAttribute('class', 'node-tag');
+      tag.textContent = TAG[d.kind];
+      g.appendChild(tag);
+    }
+
+    const name = document.createElementNS(NS, 'text');
+    name.setAttribute('x', w/2); name.setAttribute('y', isRC ? h/2 + 5 : 33);
+    name.setAttribute('text-anchor', 'middle'); name.setAttribute('class', 'node-name');
+    name.textContent = d.name.toUpperCase();
+    g.appendChild(name);
+
+    if (!isRC){
+      const idText = document.createElementNS(NS, 'text');
+      idText.setAttribute('x', w/2); idText.setAttribute('y', 48);
+      idText.setAttribute('text-anchor', 'middle'); idText.setAttribute('class', 'node-idtext');
+      idText.textContent = `${hex4(d.vid)}:${hex4(d.did)}`;
+      g.appendChild(idText);
+
+      badge = document.createElementNS(NS, 'text');
+      badge.setAttribute('x', w/2); badge.setAttribute('y', h - 8);
+      badge.setAttribute('text-anchor', 'middle'); badge.setAttribute('class', 'node-badge');
+      g.appendChild(badge);
+    }
+
+    g.addEventListener('click', () => selectNode(id));
+    g.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); selectNode(id); }
+    });
+
+    svg.appendChild(g);
+    nodeEls[id] = { group: g, badge };
+  }
+
+  Object.keys(DEVICES).forEach(makeNode);
+
+  function updateBadge(id, st){
+    const el = nodeEls[id].badge;
+    if (!el) return;
+    if (st.bus == null){ el.textContent = ''; el.classList.remove('shown'); return; }
+    let t = `B${st.bus}:D${st.dev}`;
+    if (st.secondary != null) t += ` →${st.secondary}`;
+    if (st.subordinate != null) t += `–${st.subordinate}`;
+    el.textContent = t;
+    el.classList.add('shown');
+  }
+
+  function highlightPath(id){
+    let cur = id;
+    while (cur){
+      if (edgeEls[cur]) edgeEls[cur].classList.add('lit');
+      cur = parentOf(cur);
+    }
+  }
+
+  // ---- register inspector ----
+  function renderRegisterTable(id){
+    const d = DEVICES[id];
+    const st = liveState[id] || {};
+    const tbody = document.getElementById('reg-body');
+    tbody.innerHTML = '';
+    const target = document.getElementById('reg-target');
+    target.textContent = id === 'rc'
+      ? 'ROOT COMPLEX'
+      : `${d.name.toUpperCase()} — bus ${st.bus ?? '—'} dev ${st.dev ?? '—'} fn 0`;
+
+    const rows = [];
+    if (id === 'rc'){
+      rows.push(['—', 'ORIGIN', 'bus 0 root — not a config-space device']);
+    } else {
+      rows.push(['0x00', 'VENDOR_ID', hex4(d.vid)]);
+      rows.push(['0x02', 'DEVICE_ID', hex4(d.did)]);
+      rows.push(['0x0E', 'HEADER_TYPE', isBridge(id) ? '0x01 (bridge)' : '0x00 (endpoint)']);
+      if (isBridge(id)){
+        rows.push(['0x19', 'SECONDARY_BUS', st.secondary != null ? st.secondary : '—']);
+        rows.push(['0x1A', 'SUBORDINATE_BUS', st.subordinate != null ? st.subordinate : '—']);
+      } else {
+        rows.push(['0x0B', 'BASE_CLASS', hex2(d.baseClass)]);
+        rows.push(['0x0A', 'SUBCLASS', hex2(d.subClass)]);
+        rows.push(['0x09', 'PROG_IF', hex2(d.progIf)]);
+        d.bars.forEach((bar, i) => {
+          rows.push([hex2(0x10 + 4*i), `BAR${i}`, `${fmtSize(bar.size)} · ${bar.kind}${bar.prefetch ? ' · prefetch' : ''}`]);
+        });
+      }
+    }
+    rows.forEach(r => {
+      const tr = document.createElement('tr');
+      r.forEach((c, i) => {
+        const td = document.createElement('td');
+        td.textContent = c;
+        if (i === 0) td.className = 'reg-off';
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+  }
+
+  let selectedId = null;
+  function selectNode(id){
+    if (selectedId && nodeEls[selectedId]) nodeEls[selectedId].group.classList.remove('is-selected');
+    selectedId = id;
+    nodeEls[id].group.classList.add('is-selected');
+    renderRegisterTable(id);
+  }
+
+  // ---- log ----
+  function logLine(text, cls){
+    const log = document.getElementById('log');
+    const line = document.createElement('div');
+    if (cls) line.className = cls;
+    line.textContent = text;
+    log.appendChild(line);
+    log.scrollTop = log.scrollHeight;
+  }
+  function clearLog(){ document.getElementById('log').innerHTML = ''; }
+
+  function formatProbeLog(step){
+    const d = DEVICES[step.id];
+    const ht = isBridge(step.id) ? '0x01' : '0x00';
+    return `bus${step.bus}:dev${step.dev}: venid: ${hex4(d.vid)} header_type: ${ht}`;
+  }
+  function formatEndpointLog(step){
+    const d = DEVICES[step.id];
+    return `bus${step.bus}:dev${step.dev}: venid: ${hex4(d.vid)} class: ${hex2(d.baseClass)}:${hex2(d.subClass)}`;
+  }
+
+  // ---- playback state ----
+  let steps = buildSteps();
+  let idx = 0;
+  let liveState = freshState();
+  let playing = false;
+  let timer = null;
+  const SPEEDS = [900, 450, 220];
+  const SPEED_LABELS = ['1×', '2×', '4×'];
+  let speedIdx = 0;
+
+  function applyStep(step){
+    if (step.type === 'probe'){
+      liveState[step.id].bus = step.bus; liveState[step.id].dev = step.dev;
+      highlightPath(step.id);
+      nodeEls[step.id].group.classList.add('is-probing');
+      updateBadge(step.id, liveState[step.id]);
+      selectNode(step.id);
+      logLine(formatProbeLog(step));
+    } else if (step.type === 'secondary'){
+      liveState[step.id].secondary = step.secondary;
+      updateBadge(step.id, liveState[step.id]);
+      renderRegisterTable(step.id);
+      logLine(`↳ write SECONDARY_BUS = ${step.secondary} (bus${step.bus} dev${step.dev})`, 'is-indent');
+    } else if (step.type === 'subordinate'){
+      liveState[step.id].subordinate = step.subordinate;
+      nodeEls[step.id].group.classList.remove('is-probing');
+      nodeEls[step.id].group.classList.add('is-found');
+      updateBadge(step.id, liveState[step.id]);
+      if (selectedId === step.id) renderRegisterTable(step.id);
+      logLine(`↰ write SUBORDINATE_BUS = ${step.subordinate} (bus${step.bus} dev${step.dev})`, 'is-indent');
+    } else if (step.type === 'endpoint'){
+      nodeEls[step.id].group.classList.remove('is-probing');
+      nodeEls[step.id].group.classList.add('is-found');
+      updateBadge(step.id, liveState[step.id]);
+      if (selectedId === step.id) renderRegisterTable(step.id);
+      logLine(formatEndpointLog(step));
+    } else if (step.type === 'scandone'){
+      logLine(`bus${step.bus}: dev${step.from}-31 no response (0xFFFF) — scan of bus${step.bus} done`, 'is-note');
+    }
+  }
+
+  function updateStepCounter(){
+    document.getElementById('step-counter').textContent = `STEP ${Math.min(idx, steps.length)}/${steps.length}`;
+  }
+
+  function stepForward(){
+    if (idx >= steps.length) return;
+    applyStep(steps[idx]); idx++;
+    updateStepCounter();
+    if (idx >= steps.length){
+      pause();
+      const buses = new Set(Object.values(liveState).map(s => s.bus).filter(v => v != null));
+      logLine(`— enumeration complete: ${buses.size} buses, ${Object.values(liveState).filter(s=>s.bus!=null).length} devices —`);
+    }
+  }
+
+  function setPlayButtonState(isPlaying){
+    const btn = document.getElementById('btn-play');
+    btn.classList.toggle('is-playing', isPlaying);
+    btn.lastChild.textContent = isPlaying ? 'Pause' : 'Run';
+  }
+  function play(){
+    if (playing || idx >= steps.length) return;
+    playing = true; setPlayButtonState(true);
+    timer = setInterval(stepForward, SPEEDS[speedIdx]);
+  }
+  function pause(){
+    playing = false; setPlayButtonState(false);
+    clearInterval(timer); timer = null;
+  }
+  function togglePlay(){ playing ? pause() : play(); }
+  function cycleSpeed(){
+    speedIdx = (speedIdx + 1) % SPEEDS.length;
+    document.getElementById('btn-speed').textContent = SPEED_LABELS[speedIdx];
+    if (playing){ clearInterval(timer); timer = setInterval(stepForward, SPEEDS[speedIdx]); }
+  }
+
+  function clearVisualState(){
+    Object.values(nodeEls).forEach(n => {
+      n.group.classList.remove('is-probing', 'is-found', 'is-selected');
+      if (n.badge){ n.badge.textContent = ''; n.badge.classList.remove('shown'); }
+    });
+    Object.values(edgeEls).forEach(e => e.classList.remove('lit'));
+    nodeEls['rc'].group.classList.add('is-found');
+  }
+
+  function doReset(){
+    pause();
+    idx = 0; steps = buildSteps(); liveState = freshState();
+    clearVisualState(); clearLog();
+    updateStepCounter();
+    selectNode('rc');
+    logLine('topology.yaml loaded — 11 devices in the tree. Press Step or Run to begin.', 'is-note');
+  }
+
+  document.getElementById('btn-reset').addEventListener('click', doReset);
+  document.getElementById('btn-step').addEventListener('click', () => { pause(); stepForward(); });
+  document.getElementById('btn-play').addEventListener('click', togglePlay);
+  document.getElementById('btn-speed').addEventListener('click', cycleSpeed);
+
+  doReset();
+})();
+</script>
