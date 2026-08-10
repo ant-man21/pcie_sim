@@ -7,7 +7,7 @@ def enumerate_pcie(curr_bus, next_bus, sim):
 	for device in range(32):
 		# print(curr_bus)
 		if curr_bus == 255:
-			return # too many buses. might be a dead check
+			return # too many buses.
 		vendor_id = sim.read_config(curr_bus, device, 0, cs.VENDOR_ID, 2)
 		if vendor_id == 0xffff:
 			continue
@@ -20,10 +20,11 @@ def enumerate_pcie(curr_bus, next_bus, sim):
 				sim.write_config(curr_bus, device, 0, cs.SECONDARY_BUS, 1, next_bus)
 				next_bus = assigned_bus + 1
 				next_bus = enumerate_pcie(assigned_bus, next_bus, sim)
+				sim.write_config(curr_bus, device, 0, cs.SUBORDINATE_BUS, 1, next_bus-1)
 			else: #header_type == 0x00 probably?
 				base_class = sim.read_config(curr_bus, device, 0, cs.BASE_CLASS, 2)
 				sub_class = sim.read_config(curr_bus, device, 0, cs.SUBCLASS, 2)
-				print(f"bus{curr_bus}:dev{device}: venid: {hex(vendor_id)} class: {hex(base_class)}:{hex(sub_class)} ")
+				print(f"bus{curr_bus}:dev{device}: venid: {hex(vendor_id)} class: {hex(base_class)}:{hex(sub_class)}")
 				pass
 	return next_bus
 
