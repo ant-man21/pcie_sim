@@ -1,0 +1,92 @@
+# PCIe device tree.
+#
+# No bus numbers here on purpose: real firmware assigns (and writes) bus
+# numbers during enumeration, it doesn't read them from a config file.
+# Your enumeration code assigns them by walking this tree depth-first,
+# same as PciBusDxe / Linux pci_scan_bus would.
+#
+# vendor_id/device_id are given for every function, including bridges
+# (root ports and switch ports are real PCI devices too -- they answer
+# vendor ID reads just like endpoints do). Values below are plausible
+# real-world IDs, not guaranteed to match an exact part number.
+#
+# class fields (base_class/sub_class/prog_if) are the three bytes at
+# config offset 0x0B/0x0A/0x09. bridges are implicitly class 06 (bridge
+# device), so they don't need a class block -- their type alone implies it.
+
+root_complex:
+  name: "Root Complex"
+  root_ports:
+
+    - name: "Root Port 0"
+      vendor_id: 0x8086      # Intel
+      device_id: 0x352E      # generic Intel root port ID
+      connects_to:
+        type: switch
+        name: "Switch 1"
+        vendor_id: 0x10B5    # Broadcom/PLX
+        device_id: 0x8725    # PEX8725-style switch
+        downstream_ports:
+
+          - name: "Downstream Port 0"
+            connects_to:
+              type: endpoint
+              name: "NVMe SSD"
+              vendor_id: 0x144D    # Samsung
+              device_id: 0xA808
+              base_class: 0x01     # Mass Storage Controller
+              sub_class: 0x08      # Non-Volatile Memory
+              prog_if: 0x02        # NVMe I/O controller
+              bars:
+                - size: 16384        # 16 KiB, NVMe BAR0 (registers)
+                  kind: mem64
+                  prefetchable: false
+
+          - name: "Downstream Port 1"
+            connects_to:
+              type: endpoint
+              name: "Ethernet"
+              vendor_id: 0x14E4    # Broadcom
+              device_id: 0x1657
+              base_class: 0x02     # Network Controller
+              sub_class: 0x00      # Ethernet
+              prog_if: 0x00
+              bars:
+                - size: 262144       # 256 KiB, NIC register/doorbell BAR
+                  kind: mem64
+                  prefetchable: false
+
+    - name: "Root Port 1"
+      vendor_id: 0x8086
+      device_id: 0x352F
+      connects_to:
+        type: endpoint
+        name: "NIC"
+        vendor_id: 0x8086    # Intel
+        device_id: 0x1533
+        base_class: 0x02     # Network Controller
+        sub_class: 0x00      # Ethernet
+        prog_if: 0x00
+        bars:
+          - size: 131072        # 128 KiB
+            kind: mem64
+            prefetchable: false
+
+    - name: "Root Port 2"
+      vendor_id: 0x8086
+      device_id: 0x3530
+      connects_to:
+        type: endpoint
+        name: "GPU"
+        vendor_id: 0x10DE    # NVIDIA
+        device_id: 0x2204
+        base_class: 0x03     # Display Controller
+        sub_class: 0x00      # VGA-compatible
+        prog_if: 0x00
+        bars:
+          - size: 268435456     # 256 MiB, framebuffer/BAR0
+            kind: mem64
+            prefetchable: true
+          - size: 33554432      # 32 MiB, BAR2 (registers/doorbell)
+            kind: mem64
+            prefetchable: false
